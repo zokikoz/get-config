@@ -24,6 +24,35 @@ class NetDevice
       @connection = {"Host" => @options[:host], "Port" => @options[:port]}
     end
   end
+
+  # Setting default login from pswd.yml file if credentials is not set in pool.yml
+  def self.setlogin(options,passwords)
+    catch(:done) do
+      if !(options.has_key?(:user) && options.has_key?(:pswd)) # Hello, De Morgan!
+        def_user = nil ; def_pswd = nil
+        passwords.each do |group|
+          if group[:type] == 'default'
+            def_user = group[:user] ; def_pswd = group[:pswd]
+          elsif group[:type].is_a?(Array)
+            group[:type].each do |type|
+              if type == options[:type]
+                options[:user] = group[:user] unless options.has_key?(:user)
+                options[:pswd] = group[:pswd] unless options.has_key?(:pswd)
+                throw :done
+              end
+            end
+          elsif group[:type] == options[:type]
+            options[:user] = group[:user] unless options.has_key?(:user)
+            options[:pswd] = group[:pswd] unless options.has_key?(:pswd)
+            throw :done
+          end
+        end
+        options[:user] = def_user unless options.has_key?(:user)
+        options[:pswd] = def_pswd unless options.has_key?(:pswd)
+      end
+    end
+  end
+
   # Mixin templates methods for various types of network devices
   include Templates
 
@@ -50,35 +79,9 @@ passwords = YAML.load(File.read("pswd.yml"))
 pool = YAML.load(File.read("pool.yml"))
 
 pool.each do |options|
-puts options
-# Setting default login for device type if credentials is not set
-  catch(:done) do
-    if !(options.has_key?(:user) && options.has_key?(:pswd)) # Hello, De Morgan!
-      def_user = nil ; def_pswd = nil
-      passwords.each do |group|
-        if group[:type] == 'default'
-          def_user = group[:user] ; def_pswd = group[:pswd]
-        elsif group[:type].is_a?(Array)
-          group[:type].each do |type|
-            if type == options[:type]
-              options[:user] = group[:user] unless options.has_key?(:user)
-              options[:pswd] = group[:pswd] unless options.has_key?(:pswd)
-              throw :done
-            end
-          end
-        elsif group[:type] == options[:type]
-          options[:user] = group[:user] unless options.has_key?(:user)
-          options[:pswd] = group[:pswd] unless options.has_key?(:pswd)
-          throw :done
-        end
-      end
-      options[:user] = def_user unless options.has_key?(:user)
-      options[:pswd] = def_pswd unless options.has_key?(:pswd)
-    end
-  end
-
-puts options
-
+  puts options
+  NetDevice.setlogin(options,passwords)
+  puts options
 #  device = NetDevice.new(options)
 #  result = device.getconfig
 #  print result

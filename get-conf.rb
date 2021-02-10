@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# get_config_by_telnet
+# get-conf
 # Gets configurations of network devices via telnet session
 
 require 'net-telnet'
@@ -10,7 +10,7 @@ require './templates'
 # Adding to hash only new keys and values (don't change old)
 class Hash
   def safe_merge!(from)
-    merge!(from) { |_key, old, new| [new, old].max }
+    merge!(from) { |_key, old| old }
   end
 end
 

@@ -1,88 +1,103 @@
 #!/usr/bin/env ruby
-# Get-Config
-# Get network devices configuration using telnet session
+# get_config_by_telnet
+# Gets configurations of network devices via telnet session
 
 require 'net-telnet'
 require 'yaml'
 
 require './templates'
 
+# Adding to hash only new keys and values (don't change old)
+class Hash
+  def safe_merge!(from)
+    merge!(from) { |_key, old, new| [new, old].max }
+  end
+end
+
 # Creating network device object using net-telnet module
 class NetDevice
+  DEFAULT = {
+    name: 'localhost',
+    host: 'localhost',
+    port: 23,
+    type: 'example',
+    user: 'username',
+    pswd: 'password'
+  }.freeze
+
   def initialize(options)
-    @options = options
-    @options[:name] = 'localhost' unless @options.has_key?(:name)
-    @options[:host] = 'localhost' unless @options.has_key?(:host)
-    @options[:port] = 23          unless @options.has_key?(:port)
-    @options[:type] = 'cisco'     unless @options.has_key?(:type)
-    @options[:user] = 'username'  unless @options.has_key?(:user)
-    @options[:pswd] = 'password'  unless @options.has_key?(:pswd)
+    @options = DEFAULT.merge(options)
     # Generating connection hash for net-telnet module
-    if @options.has_key?(:logs)
-      @connection = {"Host" => @options[:host], "Port" => @options[:port], "Output_log" => @options[:logs]}
-    else
-      @connection = {"Host" => @options[:host], "Port" => @options[:port]}
-    end
+    @connection = if @options.key?(:logs)
+                    { 'Host' => @options[:host], 'Port' => @options[:port], 'Output_log' => @options[:logs] }
+                  else
+                    { 'Host' => @options[:host], 'Port' => @options[:port] }
+                  end
   end
 
   # Setting default login from pswd.yml file if credentials is not set in pool.yml
-  def self.setlogin(options,passwords)
+  def self.set_login(options, passwords)
+    default = { user: 'default-user', pswd: 'default-password' }
     catch(:done) do
-      if !(options.has_key?(:user) && options.has_key?(:pswd)) # Hello, De Morgan!
-        def_user = nil ; def_pswd = nil
-        passwords.each do |group|
-          if group[:type] == 'default'
-            def_user = group[:user] ; def_pswd = group[:pswd]
-          elsif group[:type].is_a?(Array)
-            group[:type].each do |type|
-              if type == options[:type]
-                options[:user] = group[:user] unless options.has_key?(:user)
-                options[:pswd] = group[:pswd] unless options.has_key?(:pswd)
-                throw :done
-              end
+      passwords.each do |group|
+        case group[:type]
+        when 'default'
+          default.merge!(group) # Saving default login
+        when Array
+          group[:type].each do |type|
+            if type == options[:type]
+              options.safe_merge!(group)
+              throw :done
             end
-          elsif group[:type] == options[:type]
-            options[:user] = group[:user] unless options.has_key?(:user)
-            options[:pswd] = group[:pswd] unless options.has_key?(:pswd)
-            throw :done
           end
+        when options[:type]
+          options.safe_merge!(group)
+          throw :done
         end
-        options[:user] = def_user unless options.has_key?(:user)
-        options[:pswd] = def_pswd unless options.has_key?(:pswd)
       end
+      options.safe_merge!(default) # Setting default login if not find any suitable type in pswd.yml
     end
   end
+  # set_login
 
   # Mixin templates methods for various types of network devices
   include Templates
 
   # Getting gonfiguration by command line templates
-  def getconfig
-    res = self.send(@options[:type]) # Using @options[:type] value as method name from templates module
+  def load_config
+    send(@options[:type]) # Using @options[:type] value as method name from templates module
+  rescue StandardError => e
+    e
   end
 end
+# NetDevice
 
 # Creating pool and passwords example files
-unless File.exist?("pool.yml")
-  pool = [{ name: 'full-example', host: 'localhost', port: 23, type: 'cisco', user: 'cisco', pswd: 'cisco', logs: 'example.log' },
+unless File.exist?('pool.yml')
+  puts 'Creating example devices pool file (pool.yml)'
+  pool = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
+            user: 'cisco', pswd: 'cisco', logs: 'example.log' },
           { name: 'base-example', host: '127.0.0.1', type: 'cisco' }]
-  File.open("pool.yml", "w") { |file| file.write(pool.to_yaml) }
+  File.open('pool.yml', 'w') { |file| file.write(pool.to_yaml) }
 end
-unless File.exist?("pswd.yml")
+unless File.exist?('pswd.yml')
+  puts 'Creating example passwords file (pswd.yml)'
   passwords = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
-          { user: 'root', pswd: 'amnesiac', type: ['juniper', 'juniper1'] }]
-  File.open("pswd.yml", "w") { |file| file.write(passwords.to_yaml) }
+               { user: 'root', pswd: 'amnesiac', type: %w[juniper juniper1] }]
+  File.open('pswd.yml', 'w') { |file| file.write(passwords.to_yaml) }
 end
 
 # Loading passwords and pool files
-passwords = YAML.load(File.read("pswd.yml"))
-pool = YAML.load(File.read("pool.yml"))
+passwords = YAML.safe_load(File.read('pswd.yml'), [Symbol])
+pool = YAML.safe_load(File.read('pool.yml'), [Symbol])
 
-pool.each do |options|
-  puts options
-  NetDevice.setlogin(options,passwords)
-  puts options
-#  device = NetDevice.new(options)
-#  result = device.getconfig
-#  print result
+unless pool.nil? || passwords.nil?
+  pool.each do |options|
+    puts options
+    NetDevice.set_login(options, passwords) unless options.key?(:user) && options.key?(:pswd)
+    puts options
+    device = NetDevice.new(options)
+    result = device.load_config
+    print result
+  end
 end

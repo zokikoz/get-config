@@ -11,7 +11,8 @@ require './templates'
 CONFIG = {
   arch_dir: 'archive', # Archive directory path
   pool_file: 'pool.yml', # Devices pool file name
-  pswd_file: 'pswd.yml' # Passwords file name
+  pswd_file: 'pswd.yml', # Passwords file name
+  error_log: 'errors.log' # Errors log file
 }.freeze
 
 # Returns the receiver if it's not empty, else nil. Modified .presence method from rails
@@ -78,18 +79,22 @@ class NetDevice
 
   # Getting gonfiguration by command line templates
   def load_config
-    send(@options[:type]) # Using @options[:type] value as method name from templates module
+    res = send(@options[:type]) # Using @options[:type] value as method name from templates module
+    return res unless res.nil? raise StandardError, 'Empty response'
   rescue StandardError => e
+    log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{@options[:name]} (#{@options[:host]}) - #{e} \n"
+    File.open(CONFIG[:error_log], 'a') { |f| f.write log }
     e
   end
 
-  def check_filename(work_dir)
+  # Creating correct filename based on @options[:name]
+  def gen_filename(work_dir)
     # Sanitizing filename (strip, gsub), setting downcase.
     # Set 'unnamed' if it's empty after all (via .presence)
     filename = @options[:name].strip.gsub(/[^0-9A-Za-z_\-]/, '').downcase.presence || 'unnamed'
     namesakes = Dir.glob("#{work_dir}/#{filename}.*") # Checking for duplicate filenames
     unless namesakes.empty?
-      namesakes.map! { |file| file[0...-4].split('.').last.to_i } # Getting numeric suffix from filenames
+      namesakes.map! { |file| file[0...-4].split('.').last.to_i } # Getting numeric suffix from dup filenames
       filename = "#{filename}.#{namesakes.max + 1}" # Creating a new filename by increasing the maximum suffix
     end
     filename
@@ -97,7 +102,7 @@ class NetDevice
 
   # Saving configuration to file
   def save_config(work_dir, result)
-    filename = check_filename(work_dir)
+    filename = gen_filename(work_dir)
     File.open("#{work_dir}/#{filename}.cfg", 'w') { |f| f.write result }
   end
 end
@@ -137,6 +142,7 @@ unless pool.nil? || passwords.nil?
     puts options
     device = NetDevice.new(options)
     result = device.load_config
+    #result = 'test'
     device.save_config(work_dir, result)
     # print result
   end

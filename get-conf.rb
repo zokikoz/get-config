@@ -80,7 +80,10 @@ class NetDevice
   # Getting gonfiguration by command line templates
   def load_config
     res = send(@options[:type]) # Using @options[:type] value as method name from templates module
-    return res unless res.nil? raise StandardError, 'Empty response'
+    raise StandardError, 'Empty response' if res.nil?
+    raise StandardError, "Short response: \"#{res.gsub(/[\t\n\v\f\r]/, ' ')}\"" if res.length < 100
+
+    res
   rescue StandardError => e
     log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{@options[:name]} (#{@options[:host]}) - #{e} \n"
     File.open(CONFIG[:error_log], 'a') { |f| f.write log }

@@ -9,7 +9,7 @@ require 'yaml'
 require './templates'
 
 CONFIG = {
-  arch_dir: 'archive', # Archive directory path
+  archv_dir: 'archive', # Archive directory path
   pool_file: 'pool.yml', # Devices pool file name
   pswd_file: 'pswd.yml', # Passwords file name
   error_log: 'errors.log' # Errors log file
@@ -50,7 +50,7 @@ class NetDevice
                   end
   end
 
-  # Setting default login from pswd.yml file if credentials is not set in pool.yml
+  # Setting group or default login from pswd.yml file if credentials is not set in pool.yml
   def self.set_login(options, passwords, **default)
     catch(:done) do
       passwords.each do |group|
@@ -85,9 +85,9 @@ class NetDevice
 
     res
   rescue StandardError => e
-    log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{@options[:name]} (#{@options[:host]}) - #{e} \n"
+    log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{@options[:name]} (#{@options[:host]}) - #{e}\n"
     File.open(CONFIG[:error_log], 'a') { |f| f.write log }
-    e
+    "!ERR #{e}"
   end
 
   # Creating correct filename based on @options[:name]
@@ -97,7 +97,7 @@ class NetDevice
     filename = @options[:name].strip.gsub(/[^0-9A-Za-z_\-]/, '').downcase.presence || 'unnamed'
     namesakes = Dir.glob("#{work_dir}/#{filename}.*") # Checking for duplicate filenames
     unless namesakes.empty?
-      namesakes.map! { |file| file[0...-4].split('.').last.to_i } # Getting numeric suffix from dup filenames
+      namesakes.map! { |f| f[0...-4].split('.').last.to_i } # Getting numeric suffix from dup filenames
       filename = "#{filename}.#{namesakes.max + 1}" # Creating a new filename by increasing the maximum suffix
     end
     filename
@@ -117,17 +117,17 @@ unless File.exist?(CONFIG[:pool_file])
   pool = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
             user: 'cisco', pswd: 'cisco', logs: 'example.log' },
           { name: 'base-example', host: '127.0.0.1', type: 'cisco' }]
-  File.open(CONFIG[:pool_file], 'w') { |file| file.write(pool.to_yaml) }
+  File.open(CONFIG[:pool_file], 'w') { |f| f.write(pool.to_yaml) }
 end
 unless File.exist?(CONFIG[:pswd_file])
   puts "Creating example passwords file (#{CONFIG[:pswd_file]})"
   passwords = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
                { user: 'root', pswd: 'amnesiac', type: %w[juniper juniper1] }]
-  File.open(CONFIG[:pswd_file], 'w') { |file| file.write(passwords.to_yaml) }
+  File.open(CONFIG[:pswd_file], 'w') { |f| f.write(passwords.to_yaml) }
 end
 
 # Creating an archive directory
-FileUtils.mkdir_p(CONFIG[:arch_dir]) unless Dir.exist?(CONFIG[:arch_dir])
+FileUtils.mkdir_p(CONFIG[:archv_dir]) unless Dir.exist?(CONFIG[:archv_dir])
 
 # Loading passwords and pool files
 passwords = YAML.safe_load(File.read(CONFIG[:pswd_file]), [Symbol])
@@ -135,18 +135,24 @@ pool = YAML.safe_load(File.read(CONFIG[:pool_file]), [Symbol])
 
 unless pool.nil? || passwords.nil?
   # Creating a working directory
-  work_dir = "#{CONFIG[:arch_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
+  work_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
   work_dir = "#{work_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(work_dir) # Adding timestamp if dir exists
   FileUtils.mkdir_p(work_dir)
+  File.open(CONFIG[:error_log], 'a') { |f| f.write "#{Time.now.strftime('%d.%m.%Y %H:%M')} Starting #{work_dir}\n" }
+  puts "Saving in \"#{work_dir}\""
   # Polling network devices from pool
+  progress = { i: 0, err: 0, done: 0, string: 'Polling devices pool:' }
   pool.each do |options|
-    puts options
-    NetDevice.set_login(options, passwords) unless options.key?(:user) && options.key?(:pswd)
-    puts options
-    device = NetDevice.new(options)
-    result = device.load_config
-    #result = 'test'
-    device.save_config(work_dir, result)
-    # print result
+    print "\r\e[K#{progress[:string]} #{progress[:done]}% (#{options[:name]})" # Progress bar
+    NetDevice.set_login(options, passwords) unless options.key?(:user) && options.key?(:pswd) # Setting credentials
+    device = NetDevice.new(options) # Creating net device object
+    result = device.load_config # Getting config from device
+    device.save_config(work_dir, result) # Saving config
+    # Progress calculation
+    progress[:i] += 1
+    progress[:err] += 1 if result[0, 4] == '!ERR'
+    progress[:done] = (progress[:i] / pool.length.to_f * 100).to_i
   end
+  puts "\r\e[K#{progress[:string]} #{progress[:done]}% (done)"
+  puts "Errors: #{progress[:err]}. Check #{CONFIG[:error_log]}." if progress[:err].positive?
 end

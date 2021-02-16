@@ -109,7 +109,9 @@ class NetDevice
     File.open("#{work_dir}/#{filename}.cfg", 'w') { |f| f.write result }
   end
 end
-# NetDevice
+# NetDevice class end
+
+# Script start
 
 # Creating pool and passwords example files
 unless File.exist?(CONFIG[:pool_file])
@@ -138,8 +140,11 @@ unless pool.nil? || passwords.nil?
   work_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
   work_dir = "#{work_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(work_dir) # Adding timestamp if dir exists
   FileUtils.mkdir_p(work_dir)
-  File.open(CONFIG[:error_log], 'a') { |f| f.write "#{Time.now.strftime('%d.%m.%Y %H:%M')} Starting #{work_dir}\n" }
   puts "Saving in \"#{work_dir}\""
+
+  # Start logging
+  File.open(CONFIG[:error_log], 'a') { |f| f.write "#{Time.now.strftime('%d.%m.%Y %H:%M')} Starting #{work_dir}\n" }
+
   # Polling network devices from pool
   progress = { i: 0, err: 0, done: 0, string: 'Polling devices pool:' }
   pool.each do |options|
@@ -148,6 +153,7 @@ unless pool.nil? || passwords.nil?
     device = NetDevice.new(options) # Creating net device object
     result = device.load_config # Getting config from device
     device.save_config(work_dir, result) # Saving config
+    
     # Progress calculation
     progress[:i] += 1
     progress[:err] += 1 if result[0, 4] == '!ERR'

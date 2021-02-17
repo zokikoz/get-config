@@ -117,14 +117,14 @@ end
 unless File.exist?(CONFIG[:pool_file])
   puts "Creating example devices pool file (#{CONFIG[:pool_file]})"
   pool = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
-            user: 'cisco', pswd: 'cisco', logs: 'example.log' },
-          { name: 'base-example', host: '127.0.0.1', type: 'cisco' }]
+            user: 'root', pswd: 'amnesiac', logs: 'example.log' },
+          { name: 'base-example', host: '127.0.0.1', type: 'juniper' }]
   File.open(CONFIG[:pool_file], 'w') { |f| f.write(pool.to_yaml) }
 end
 unless File.exist?(CONFIG[:pswd_file])
   puts "Creating example passwords file (#{CONFIG[:pswd_file]})"
   passwords = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
-               { user: 'root', pswd: 'amnesiac', type: %w[juniper juniper1] }]
+               { user: 'cisco', pswd: 'cisco', type: %w[cisco-user cisco-enable] }]
   File.open(CONFIG[:pswd_file], 'w') { |f| f.write(passwords.to_yaml) }
 end
 
@@ -136,6 +136,10 @@ passwords = YAML.safe_load(File.read(CONFIG[:pswd_file]), [Symbol])
 pool = YAML.safe_load(File.read(CONFIG[:pool_file]), [Symbol])
 
 unless pool.nil? || passwords.nil?
+  if pool[0][:type] == 'example'
+    puts 'Modify config files to get started'
+    exit 0
+  end
   # Creating a working directory
   work_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
   work_dir = "#{work_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(work_dir) # Adding timestamp if dir exists

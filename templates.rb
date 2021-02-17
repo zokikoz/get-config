@@ -4,12 +4,6 @@
 # 'enable' and 'super' authorization types uses @options[:user] as first password
 # and @options[:pswd] as privileged password
 module Templates
-  # Example (first run)
-  def example
-    puts "\nModify config files to get started"
-    exit 0
-  end
-
   # Alcatel Omnistack LS
   def omnistack
     @connection['Prompt'] = /([#>] |:)\z/n
@@ -123,6 +117,4 @@ module Templates
     host.close
     res
   end
-  
-alias_method :default, :example
 end

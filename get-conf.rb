@@ -39,6 +39,14 @@ module Prep
     File.open(CONFIG[:pswd_file], 'w') { |f| f.write(passwords.to_yaml) }
   end
 
+  # First run check
+  def self.first_run_chk(pool, passwords)
+    return unless pool[0][:type] == 'example' || passwords[0][:user] == 'default-user'
+
+    puts 'Modify config files to get started'
+    exit 0
+  end
+
   # Creating a working directory
   def self.work_dir(pool_file)
     if @base_dir.nil?
@@ -131,8 +139,7 @@ class NetDevice
 
   # Creating correct filename based on @options[:name]
   def gen_filename(work_dir)
-    # Sanitizing filename (strip, gsub), setting downcase.
-    # Set 'unnamed' if it's empty after all (via .presence)
+    # Sanitizing filename (strip, gsub), setting downcase. Set 'unnamed' if it's empty after all (via .presence)
     filename = @options[:name].strip.gsub(/[^0-9A-Za-z_\-]/, '').downcase.presence || 'unnamed'
     namesakes = Dir.glob("#{work_dir}/#{filename}.*") # Checking for duplicate filenames
     unless namesakes.empty?
@@ -161,6 +168,7 @@ FileUtils.mkdir_p(CONFIG[:archv_dir]) unless Dir.exist?(CONFIG[:archv_dir])
 # Loading passwords file
 passwords = YAML.safe_load(File.read(CONFIG[:pswd_file]), [Symbol])
 
+# Loading pools
 CONFIG[:pool_file].each do |pool_file|
   next unless File.exist?(pool_file)
 
@@ -169,11 +177,7 @@ CONFIG[:pool_file].each do |pool_file|
   # TODO: check pool and password files structure
   next if pool.nil? || passwords.nil?
 
-  # First run check
-  if pool[0][:type] == 'example'
-    puts 'Modify config files to get started'
-    exit 0
-  end
+  Prep.first_run_chk(pool, passwords) # First run check
   work_dir = Prep.work_dir(pool_file) # Creating a working directory
   # Start logging
   File.open(CONFIG[:error_log], 'a') { |f| f.write "#{Time.now.strftime('%d.%m.%Y %H:%M')} Starting #{work_dir}\n" }

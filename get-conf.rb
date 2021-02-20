@@ -2,18 +2,81 @@
 # get-conf.rb
 # Gets configurations of network devices via telnet session
 
+# Settings
+CONFIG = {
+  archv_dir: 'archive', # Archive directory path
+  pool_file: %w[pool.yml], # Devices pools file names
+  pswd_file: 'pswd.yml', # Passwords file name
+  error_log: 'errors.log' # Errors log file
+}.freeze
+
 require 'net-telnet'
 require 'fileutils'
 require 'yaml'
 
 require './templates'
 
-CONFIG = {
-  archv_dir: 'archive', # Archive directory path
-  pool_file: 'pool.yml', # Devices pool file name
-  pswd_file: 'pswd.yml', # Passwords file name
-  error_log: 'errors.log' # Errors log file
-}.freeze
+# Preparations
+module Prep
+  # Creating pool example file
+  def self.pool_file
+    return if File.exist?(CONFIG[:pool_file][0])
+
+    puts "Creating example devices pool file (#{CONFIG[:pool_file][0]})"
+    pool = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
+              user: 'root', pswd: 'amnesiac', logs: 'example.log' },
+            { name: 'base-example', host: '127.0.0.1', type: 'juniper' }]
+    File.open(CONFIG[:pool_file][0], 'w') { |f| f.write(pool.to_yaml) }
+  end
+
+  # Creating passwords example file
+  def self.pswd_file
+    return if File.exist?(CONFIG[:pswd_file])
+
+    puts "Creating example passwords file (#{CONFIG[:pswd_file]})"
+    passwords = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
+                 { user: 'cisco', pswd: 'cisco', type: %w[cisco-user cisco-enable] }]
+    File.open(CONFIG[:pswd_file], 'w') { |f| f.write(passwords.to_yaml) }
+  end
+
+  # Creating a working directory
+  def self.work_dir(pool_file)
+    if @base_dir.nil?
+      @base_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
+      @base_dir = "#{@base_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(@base_dir) # Adding timestamp if dir exists
+      work_dir = @base_dir
+    end
+    work_dir = "#{@base_dir}/#{pool_file[0...-4]}" unless CONFIG[:pool_file].length == 1 # Subdir if multiple pools
+    FileUtils.mkdir_p(work_dir)
+    puts "Saving in \"#{work_dir}\""
+    work_dir
+  end
+
+  # Setting group or default login from pswd.yml file if credentials is not set in pool.yml
+  def self.login(options, passwords, **default)
+    catch(:done) do
+      passwords.each do |group|
+        case group[:type]
+        when 'default'
+          default.merge!(group) # Saving default login
+        when options[:type]
+          options.safe_merge!(group)
+          throw :done
+        when Array
+          group[:type].each do |type|
+            if type == options[:type]
+              options.safe_merge!(group)
+              throw :done
+            end
+          end
+        end
+      end
+      options.safe_merge!(default) # Setting default login if not find any suitable type in pswd.yml
+    end
+  end
+  # set_login method end
+end
+# Prep module end
 
 # Returns the receiver if it's not empty, else nil. Modified .presence method from rails
 class Object
@@ -49,30 +112,6 @@ class NetDevice
                     { 'Host' => @options[:host], 'Port' => @options[:port] }
                   end
   end
-
-  # Setting group or default login from pswd.yml file if credentials is not set in pool.yml
-  def self.set_login(options, passwords, **default)
-    catch(:done) do
-      passwords.each do |group|
-        case group[:type]
-        when 'default'
-          default.merge!(group) # Saving default login
-        when options[:type]
-          options.safe_merge!(group)
-          throw :done
-        when Array
-          group[:type].each do |type|
-            if type == options[:type]
-              options.safe_merge!(group)
-              throw :done
-            end
-          end
-        end
-      end
-      options.safe_merge!(default) # Setting default login if not find any suitable type in pswd.yml
-    end
-  end
-  # set_login
 
   # Mixin templates methods for various types of network devices
   include Templates
@@ -113,51 +152,39 @@ end
 
 # Script start
 
-# Creating pool and passwords example files
-unless File.exist?(CONFIG[:pool_file])
-  puts "Creating example devices pool file (#{CONFIG[:pool_file]})"
-  pool = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
-            user: 'root', pswd: 'amnesiac', logs: 'example.log' },
-          { name: 'base-example', host: '127.0.0.1', type: 'juniper' }]
-  File.open(CONFIG[:pool_file], 'w') { |f| f.write(pool.to_yaml) }
-end
-unless File.exist?(CONFIG[:pswd_file])
-  puts "Creating example passwords file (#{CONFIG[:pswd_file]})"
-  passwords = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
-               { user: 'cisco', pswd: 'cisco', type: %w[cisco-user cisco-enable] }]
-  File.open(CONFIG[:pswd_file], 'w') { |f| f.write(passwords.to_yaml) }
-end
+# Creating pool and passwords example files if they not exist
+Prep.pool_file
+Prep.pswd_file
 
 # Creating an archive directory
 FileUtils.mkdir_p(CONFIG[:archv_dir]) unless Dir.exist?(CONFIG[:archv_dir])
-
-# Loading passwords and pool files
+# Loading passwords file
 passwords = YAML.safe_load(File.read(CONFIG[:pswd_file]), [Symbol])
-pool = YAML.safe_load(File.read(CONFIG[:pool_file]), [Symbol])
 
-unless pool.nil? || passwords.nil?
+CONFIG[:pool_file].each do |pool_file|
+  next unless File.exist?(pool_file)
+
+  # Loading pool file
+  pool = YAML.safe_load(File.read(pool_file), [Symbol])
+  # TODO: check pool and password files structure
+  next if pool.nil? || passwords.nil?
+
+  # First run check
   if pool[0][:type] == 'example'
     puts 'Modify config files to get started'
     exit 0
   end
-  # Creating a working directory
-  work_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
-  work_dir = "#{work_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(work_dir) # Adding timestamp if dir exists
-  FileUtils.mkdir_p(work_dir)
-  puts "Saving in \"#{work_dir}\""
-
+  work_dir = Prep.work_dir(pool_file) # Creating a working directory
   # Start logging
   File.open(CONFIG[:error_log], 'a') { |f| f.write "#{Time.now.strftime('%d.%m.%Y %H:%M')} Starting #{work_dir}\n" }
-
   # Polling network devices from pool
-  progress = { i: 0, err: 0, done: 0, string: 'Polling devices pool:' }
+  progress = { i: 0, err: 0, done: 0, string: "Polling devices in #{pool_file[0...-4]}:" }
   pool.each do |options|
     print "\r\e[K#{progress[:string]} #{progress[:done]}% (#{options[:name]})" # Progress bar
-    NetDevice.set_login(options, passwords) unless options.key?(:user) && options.key?(:pswd) # Setting credentials
+    Prep.login(options, passwords) unless options.key?(:user) && options.key?(:pswd) # Setting credentials
     device = NetDevice.new(options) # Creating net device object
     result = device.load_config # Getting config from device
     device.save_config(work_dir, result) # Saving config
-    
     # Progress calculation
     progress[:i] += 1
     progress[:err] += 1 if result[0, 4] == '!ERR'

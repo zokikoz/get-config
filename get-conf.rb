@@ -48,13 +48,13 @@ module Prep
   end
 
   # Creating a working directory
-  def self.work_dir(pool_file)
+  def self.work_dir(pool_name)
     if @base_dir.nil?
       @base_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
       @base_dir = "#{@base_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(@base_dir) # Adding timestamp if dir exists
       work_dir = @base_dir
     end
-    work_dir = "#{@base_dir}/#{pool_file[0...-4]}" unless CONFIG[:pool_file].length == 1 # Subdir if multiple pools
+    work_dir = "#{@base_dir}/#{pool_name}" unless CONFIG[:pool_file].length == 1 # Subdir if multiple pools
     FileUtils.mkdir_p(work_dir)
     puts "Saving in \"#{work_dir}\""
     work_dir
@@ -157,6 +157,30 @@ class NetDevice
 end
 # NetDevice class end
 
+# Pool progress
+class Progress
+  def initialize(options)
+    @bar = { i: 0.0, err: 0, done: 0 }
+    @bar.merge!(options)
+  end
+
+  # Progress bar
+  def bar(name)
+    print "\r\e[KPolling devices in #{@bar[:pool]} #{@bar[:done]}% (#{name})"
+    return unless @bar[:done] == 100
+
+    puts
+    puts "Errors: #{@bar[:err]}. Check #{CONFIG[:error_log]}." if @bar[:err].positive?
+  end
+
+  # Progress calculation
+  def calc(result)
+    @bar[:i] += 1
+    @bar[:err] += 1 if result[0, 4] == '!ERR'
+    @bar[:done] = (@bar[:i] / @bar[:length] * 100).to_i
+  end
+end
+
 # Script start
 
 # Creating pool and passwords example files if they not exist
@@ -177,23 +201,20 @@ CONFIG[:pool_file].each do |pool_file|
   # TODO: check pool and password files structure
   next if pool.nil? || passwords.nil?
 
+  pool_name = pool_file[0...-4]
   Prep.first_run_chk(pool, passwords) # First run check
-  work_dir = Prep.work_dir(pool_file) # Creating a working directory
+  work_dir = Prep.work_dir(pool_name) # Creating a working directory
   # Start logging
   File.open(CONFIG[:error_log], 'a') { |f| f.write "#{Time.now.strftime('%d.%m.%Y %H:%M')} Starting #{work_dir}\n" }
   # Polling network devices from pool
-  progress = { i: 0, err: 0, done: 0, string: "Polling devices in #{pool_file[0...-4]}:" }
+  progress = Progress.new(pool: pool_name, length: pool.length)
   pool.each do |options|
-    print "\r\e[K#{progress[:string]} #{progress[:done]}% (#{options[:name]})" # Progress bar
+    progress.bar(options[:name]) # Progress bar
     Prep.login(options, passwords) unless options.key?(:user) && options.key?(:pswd) # Setting credentials
     device = NetDevice.new(options) # Creating net device object
     result = device.load_config # Getting config from device
     device.save_config(work_dir, result) # Saving config
-    # Progress calculation
-    progress[:i] += 1
-    progress[:err] += 1 if result[0, 4] == '!ERR'
-    progress[:done] = (progress[:i] / pool.length.to_f * 100).to_i
+    progress.calc(result) # Progress calculation
   end
-  puts "\r\e[K#{progress[:string]} #{progress[:done]}% (done)"
-  puts "Errors: #{progress[:err]}. Check #{CONFIG[:error_log]}." if progress[:err].positive?
+  progress.bar('done')
 end

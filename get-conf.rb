@@ -18,15 +18,22 @@ require './templates'
 
 # Preparations
 module Prep
+  class CheckError < StandardError
+  end
+
+  POOL = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
+            user: 'root', pswd: 'amnesiac', logs: 'example.log' },
+          { name: 'base-example', host: '127.0.0.1', type: 'juniper' }].freeze
+
+  PASSWORDS = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
+               { user: 'cisco', pswd: 'cisco', type: %w[cisco-user cisco-enable] }].freeze
+
   # Creating pool example file
   def self.pool_file
     return if File.exist?(CONFIG[:pool_file][0])
 
     puts "Creating example devices pool file (#{CONFIG[:pool_file][0]})"
-    pool = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
-              user: 'root', pswd: 'amnesiac', logs: 'example.log' },
-            { name: 'base-example', host: '127.0.0.1', type: 'juniper' }]
-    File.open(CONFIG[:pool_file][0], 'w') { |f| f.write(pool.to_yaml) }
+    File.open(CONFIG[:pool_file][0], 'w') { |f| f.write(POOL.to_yaml) }
   end
 
   # Creating passwords example file
@@ -34,16 +41,34 @@ module Prep
     return if File.exist?(CONFIG[:pswd_file])
 
     puts "Creating example passwords file (#{CONFIG[:pswd_file]})"
-    passwords = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
-                 { user: 'cisco', pswd: 'cisco', type: %w[cisco-user cisco-enable] }]
-    File.open(CONFIG[:pswd_file], 'w') { |f| f.write(passwords.to_yaml) }
+    File.open(CONFIG[:pswd_file], 'w') { |f| f.write(PASSWORDS.to_yaml) }
   end
 
-  # First run check
-  def self.first_run_chk(pool, passwords)
-    return unless pool[0][:type] == 'example' || passwords[0][:user] == 'default-user'
+  # Pool structure check
+  def self.pool_struct_check(pool)
+    pool.each do |pool_unit|
+      raise CheckError, 'Wrong pool file structure' unless pool_unit.keys?(POOL[1])
+    end
+  end
 
-    puts 'Modify config files to get started'
+  # Passwords structure check
+  def self.pswd_struct_check(pswd)
+    pswd.each do |pswd_unit|
+      raise CheckError, 'Wrong passwords file structure' unless pswd_unit.keys?(PASSWORDS[1])
+    end
+  end
+
+  # Pools and passwords files check
+  def self.check(pool, passwords)
+    raise CheckError, 'Empty config file' if pool.nil? || passwords.nil?
+    raise CheckError, 'Modify config files to get started' if pool == POOL || passwords == PASSWORDS
+
+    pool_struct_check(pool)
+    pswd_struct_check(passwords)
+  rescue CheckError => e
+    log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{e}\n"
+    File.open(CONFIG[:error_log], 'a') { |f| f.write log }
+    puts e
     exit 0
   end
 
@@ -93,10 +118,16 @@ class Object
   end
 end
 
-# Adding to hash only new keys and values (don't change old)
+# Hash class new methods
 class Hash
+  # Adding to the hash only new keys and values (don't change old)
   def safe_merge!(from)
     merge!(from) { |_key, old_value| old_value }
+  end
+
+  # Comparing that the first hash contains all keys from the second hash
+  def keys?(hash2)
+    (hash2.keys - keys).empty?
   end
 end
 
@@ -196,13 +227,9 @@ passwords = YAML.safe_load(File.read(CONFIG[:pswd_file]), [Symbol])
 CONFIG[:pool_file].each do |pool_file|
   next unless File.exist?(pool_file)
 
-  # Loading pool file
-  pool = YAML.safe_load(File.read(pool_file), [Symbol])
-  # TODO: check pool and password files structure
-  next if pool.nil? || passwords.nil?
-
+  pool = YAML.safe_load(File.read(pool_file), [Symbol]) # Loading pool file
   pool_name = pool_file[0...-4]
-  Prep.first_run_chk(pool, passwords) # First run check
+  Prep.check(pool, passwords) # Pool and passwords files check
   work_dir = Prep.work_dir(pool_name) # Creating a working directory
   # Start logging
   File.open(CONFIG[:error_log], 'a') { |f| f.write "#{Time.now.strftime('%d.%m.%Y %H:%M')} Starting #{work_dir}\n" }

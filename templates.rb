@@ -45,7 +45,7 @@ module Templates
 
   # Cisco ASA
   def cisco_asa
-    @connection['Prompt'] = /[#>:] \z/n
+    @connection['Prompt'] = /([#>]|word:) \z/n
     @connection['Telnetmode'] = false
     host = Net::Telnet.new(@connection)
     host.waitfor(/Password: \z/n)

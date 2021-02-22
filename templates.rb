@@ -43,6 +43,21 @@ module Templates
     res
   end
 
+  # Cisco ASA
+  def cisco_asa
+    @connection['Prompt'] = /[#>:] \z/n
+    @connection['Telnetmode'] = false
+    host = Net::Telnet.new(@connection)
+    host.waitfor(/Password: \z/n)
+    host.cmd(@options[:user])
+    host.cmd('enable')
+    host.cmd(@options[:pswd])
+    host.cmd('terminal pager 0')
+    res = host.cmd('show running-config')
+    host.close
+    res
+  end
+
   # HP super password login
   def hp_super
     @connection['Prompt'] = /[>:]\z/n
@@ -87,7 +102,6 @@ module Templates
 
   # Juniper
   def juniper
-    @connection['Prompt'] = /> \z/n
     host = Net::Telnet.new(@connection)
     host.login(@options[:user], @options[:pswd])
     res = host.cmd('show config | display set | no-more')
@@ -95,8 +109,8 @@ module Templates
     res
   end
 
-  # D-Link cisco(IOS) style cmd
-  def dlink_ios
+  # D-Link 15xx
+  def dlink_15xx
     @connection['Prompt'] = /#\z/n
     host = Net::Telnet.new(@connection)
     host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /Username:\z/n)
@@ -106,14 +120,48 @@ module Templates
     res.gsub!(/\n\r/, "\n") # Converting odd <LF><CR> output to normal <LF> end of line
   end
 
-  # D-Link own(old) style cmd
-  def dlink_own
+  # D-Link 12xx
+  def dlink_12xx
     @connection['Prompt'] = /[:#] \z/n
     host = Net::Telnet.new(@connection)
     host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /[Uu]ser[Nn]ame: \z/n)
     host.cmd('disable clipaging')
     res = host.cmd('show config current_config')
     host.cmd('enable clipaging')
+    host.close
+    res
+  end
+
+  # D-Link 35xx
+  def dlink_35xx
+    @connection['Prompt'] = /[:#]\z/n
+    @connection['Telnetmode'] = false
+    host = Net::Telnet.new(@connection)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /username:\z/n)
+    host.cmd('disable clipaging')
+    res = host.cmd('show config current_config')
+    host.cmd('enable clipaging')
+    host.close
+    res.gsub!(/\n\r/, "\n") # Converting odd <LF><CR> output to normal <LF> end of line
+  end
+
+  # Eltex
+  def eltex
+    @connection['Prompt'] = /#\z/n
+    host = Net::Telnet.new(@connection)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /User Name:\z/n)
+    host.cmd('terminal datadump')
+    res = host.cmd('show running-config')
+    host.close
+    res
+  end
+
+  # Extreme
+  def extreme
+    host = Net::Telnet.new(@connection)
+    host.login(@options[:user], @options[:pswd])
+    host.cmd('disable clipaging')
+    res = host.cmd('show configuration')
     host.close
     res
   end

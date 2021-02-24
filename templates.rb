@@ -133,9 +133,8 @@ module Templates
 
   # D-Link 12xx
   def dlink_12xx
-    @connection['Prompt'] = /[:#] \z/n
     host = Net::Telnet.new(@connection)
-    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /[Uu]ser[Nn]ame: \z/n)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /UserName: \z/n)
     host.cmd('disable clipaging')
     res = host.cmd('show config current_config')
     host.cmd('enable clipaging')

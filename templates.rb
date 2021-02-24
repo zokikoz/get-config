@@ -84,6 +84,17 @@ module Templates
     res
   end
 
+  # HP username/password login
+  def hp_user
+    @connection['Prompt'] = />\z/n
+    host = Net::Telnet.new(@connection)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /Username:\z/n)
+    host.cmd('screen-length disable')
+    res = host.cmd('display current-configuration')
+    host.close
+    res
+  end
+
   # H3C no super password
   def h3c_nosuper
     @connection['Prompt'] = /[>\]:]\z/n

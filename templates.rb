@@ -165,4 +165,17 @@ module Templates
     host.close
     res
   end
+
+  # Riverstone
+  def riverstone
+    host = Net::Telnet.new(@connection)
+    host.puts('')
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /User: \z/n)
+    host.cmd('cli set command completion off')
+    host.cmd('cli set terminal rows 0')
+    host.cmd('enable')
+    res = host.cmd('show running-config')
+    host.close
+    res
+  end
 end

@@ -142,7 +142,7 @@ class NetDevice
     pswd: 'password'
   }.freeze
 
-  attr_accessor :err
+  attr_reader :err
 
   def initialize(options)
     @options = DEFAULT.merge(options)

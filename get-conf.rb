@@ -142,8 +142,11 @@ class NetDevice
     pswd: 'password'
   }.freeze
 
+  attr_accessor :err
+
   def initialize(options)
     @options = DEFAULT.merge(options)
+    @err = 0
     # Generating connection hash for net-telnet module
     @connection = if @options.key?(:logs)
                     { 'Host' => @options[:host], 'Port' => @options[:port], 'Output_log' => @options[:logs] }
@@ -165,7 +168,8 @@ class NetDevice
   rescue StandardError => e
     log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{@options[:name]} (#{@options[:host]}) - #{e}\n"
     File.open(CONFIG[:error_log], 'a') { |f| f.write log }
-    "!ERR #{e}"
+    @err = 1
+    e
   end
 
   # Creating correct filename based on @options[:name]
@@ -205,9 +209,9 @@ class Progress
   end
 
   # Progress calculation
-  def calc(result)
+  def calc(err)
     @bar[:i] += 1
-    @bar[:err] += 1 if result[0, 4] == '!ERR'
+    @bar[:err] += err
     @bar[:done] = (@bar[:i] / @bar[:length] * 100).to_i
   end
 end
@@ -241,7 +245,7 @@ CONFIG[:pool_file].each do |pool_file|
     device = NetDevice.new(options) # Creating net device object
     result = device.load_config # Getting config from device
     device.save_config(work_dir, result) # Saving config
-    progress.calc(result) # Progress calculation
+    progress.calc(device.err) # Progress calculation
   end
   progress.bar('done')
 end

@@ -131,10 +131,12 @@ module Templates
     res.gsub!(/\n\r/, "\n") # Converting odd <LF><CR> output to normal <LF> end of line
   end
 
-  # D-Link 12xx
+  # D-Link 12xx/32xx
   def dlink_12xx
+    @connection['Prompt'] = /:.+#\s?\z/n
     host = Net::Telnet.new(@connection)
-    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /UserName: \z/n)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd],
+               'PasswordPrompt' => /[Pp]ass[Ww]ord:\s?\z/n, 'LoginPrompt' => /UserName:\s?\z/n)
     host.cmd('disable clipaging')
     res = host.cmd('show config current_config')
     host.cmd('enable clipaging')

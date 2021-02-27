@@ -47,6 +47,7 @@ module Prep
   # Pool structure check
   def self.pool_struct_check(pool)
     pool.each do |pool_unit|
+      raise CheckError, 'Wrong pool file structure' unless pool_unit.is_a?(Hash)
       raise CheckError, 'Wrong pool file structure' unless pool_unit.keys?(POOL[1])
     end
   end
@@ -54,6 +55,7 @@ module Prep
   # Passwords structure check
   def self.pswd_struct_check(pswd)
     pswd.each do |pswd_unit|
+      raise CheckError, 'Wrong passwords file structure' unless pswd_unit.is_a?(Hash)
       raise CheckError, 'Wrong passwords file structure' unless pswd_unit.keys?(PASSWORDS[1])
     end
   end

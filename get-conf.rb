@@ -172,6 +172,14 @@ class NetDevice
     e
   end
 
+  # Saving configuration to file
+  def save_config(work_dir, result)
+    filename = gen_filename(work_dir)
+    File.open("#{work_dir}/#{filename}.cfg", 'w') { |f| f.write result }
+  end
+
+  private
+
   # Creating correct filename based on @options[:name]
   def gen_filename(work_dir)
     # Sanitizing filename (strip, gsub), setting downcase. Set 'unnamed' if it's empty after all (via .presence)
@@ -182,12 +190,6 @@ class NetDevice
       filename = "#{filename}.#{namesakes.max + 1}" # Creating a new filename by increasing the maximum suffix
     end
     filename
-  end
-
-  # Saving configuration to file
-  def save_config(work_dir, result)
-    filename = gen_filename(work_dir)
-    File.open("#{work_dir}/#{filename}.cfg", 'w') { |f| f.write result }
   end
 end
 # NetDevice class end

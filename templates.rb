@@ -6,7 +6,7 @@
 module Templates
   # Alcatel Omnistack LS
   def omnistack
-    @connection['Prompt'] = /([#>] |:)\z/n
+    @connection['Prompt'] = /([#>] |word:)\z/n
     host = Net::Telnet.new(@connection)
     host.waitfor(/Password:\z/n)
     host.cmd(@options[:user])
@@ -31,7 +31,7 @@ module Templates
 
   # Cisco enable password login
   def cisco_enable
-    @connection['Prompt'] = /([#>]|: )\z/n
+    @connection['Prompt'] = /([#>]|word: )\z/n
     host = Net::Telnet.new(@connection)
     host.waitfor(/Password: \z/n)
     host.cmd(@options[:user])

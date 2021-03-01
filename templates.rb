@@ -120,41 +120,29 @@ module Templates
     res
   end
 
-  # D-Link 15xx
-  def dlink_15xx
+  # D-Link new cisco-like style CLI (15xx)
+  def dlink_new
     @connection['Prompt'] = /#\z/n
     host = Net::Telnet.new(@connection)
     host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /Username:\z/n)
     host.cmd('terminal length 0')
     res = host.cmd('show running-config')
     host.close
-    res.gsub!(/\n\r/, "\n") # Converting odd <LF><CR> output to normal <LF> end of line
+    res.gsub(/\n\r/, "\n") # Converting odd <LF><CR> output to normal <LF> end of line
   end
 
-  # D-Link 12xx/32xx
-  def dlink_12xx
+  # D-Link old own style CLI (12xx/32xx/35xx)
+  def dlink_old
     @connection['Prompt'] = /:.+#\s?\z/n
-    host = Net::Telnet.new(@connection)
-    host.login('Name' => @options[:user], 'Password' => @options[:pswd],
-               'PasswordPrompt' => /[Pp]ass[Ww]ord:\s?\z/n, 'LoginPrompt' => /UserName:\s?\z/n)
-    host.cmd('disable clipaging')
-    res = host.cmd('show config current_config')
-    host.cmd('enable clipaging')
-    host.close
-    res
-  end
-
-  # D-Link 35xx
-  def dlink_35xx
-    @connection['Prompt'] = /[:#]\z/n
     @connection['Telnetmode'] = false
     host = Net::Telnet.new(@connection)
-    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /username:\z/n)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd],
+               'PasswordPrompt' => /[Pp]ass[Ww]ord:\s?\z/n, 'LoginPrompt' => /[Uu]ser[Nn]ame:\s?\z/n)
     host.cmd('disable clipaging')
     res = host.cmd('show config current_config')
     host.cmd('enable clipaging')
     host.close
-    res.gsub!(/\n\r/, "\n") # Converting odd <LF><CR> output to normal <LF> end of line
+    res.gsub(/\n\r/, "\n") # Converting odd <LF><CR> output to normal <LF> end of line
   end
 
   # Eltex

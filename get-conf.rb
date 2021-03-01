@@ -205,7 +205,7 @@ class Progress
 
   # Progress bar
   def bar(name)
-    print "\r\e[KPolling devices in #{@bar[:pool]} (#{@bar[:done]}% #{@bar[:i]}/#{@bar[:length]} #{name})"
+    print "\r\e[KPolling devices #{@bar[:i]}/#{@bar[:length]} (#{name}) in #{@bar[:pool]}: #{@bar[:done]}%"
     return unless @bar[:done] == 100
 
     puts

@@ -52,6 +52,21 @@ module Templates
     res
   end
 
+  # Cisco EtherSwitch module
+  def cisco_es
+    @connection['Prompt'] = /[#>]\z/n
+    host = Net::Telnet.new(@connection)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /Username: \z/n)
+    host.puts("service-module #{@options[:esif]} session")
+    host.waitfor(/Open\n\z/n)
+    host.puts('')
+    host.cmd('enable')
+    host.cmd('terminal length 0')
+    res = host.cmd('show running-config')
+    host.close
+    res
+  end
+
   # Cisco ASA
   def cisco_asa
     @connection['Prompt'] = /([#>]|word:) \z/n

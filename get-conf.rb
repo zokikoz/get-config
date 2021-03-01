@@ -21,12 +21,12 @@ module Prep
   class CheckError < StandardError
   end
 
-  POOL = [{ name: 'full-example', host: 'localhost', port: 23, type: 'example',
-            user: 'root', pswd: 'amnesiac', logs: 'example.log' },
+  POOL = [{ name: 'full-example', host: 'localhost', port: 23, type: 'cisco_es',
+            user: 'admin', pswd: 'admin', esif: 'gi2/0', logs: 'example.log' },
           { name: 'base-example', host: '127.0.0.1', type: 'juniper' }].freeze
 
   PASSWORDS = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
-               { user: 'cisco', pswd: 'cisco', type: %w[cisco-user cisco-enable] }].freeze
+               { user: 'cisco', pswd: 'cisco', type: %w[cisco_user cisco_enable] }].freeze
 
   # Creating pool example file
   def self.pool_file
@@ -141,7 +141,8 @@ class NetDevice
     port: 23,
     type: 'example',
     user: 'username',
-    pswd: 'password'
+    pswd: 'password',
+    esif: 'gi2/0' # Cisco EtherSwitch interface
   }.freeze
 
   attr_reader :err

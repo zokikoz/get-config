@@ -205,7 +205,7 @@ class Progress
 
   # Progress bar
   def bar(name)
-    print "\r\e[KPolling devices #{@bar[:i]}/#{@bar[:length]} (#{name}) in #{@bar[:pool]}: #{@bar[:done]}%"
+    print "\r\e[KPolling devices in #{@bar[:pool]}: #{@bar[:done]}% (#{@bar[:i]}/#{@bar[:length]}), #{name}"
     return unless @bar[:done] == 100
 
     puts
@@ -251,5 +251,5 @@ CONFIG[:pool_file].each do |pool_file|
     device.save_config(work_dir, result) # Saving config
     progress.calc(device.err) # Progress calculation
   end
-  progress.bar('done')
+  progress.bar('done.')
 end

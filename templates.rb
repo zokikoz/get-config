@@ -4,7 +4,7 @@
 # 'enable' and 'super' authorization types uses @options[:user] as first password
 # and @options[:pswd] as privileged password
 module Templates
-  # Alcatel Omnistack LS
+  # Alcatel OmniStack LS
   def omnistack
     @connection['Prompt'] = /([#>] |word:)\z/n
     host = Net::Telnet.new(@connection)
@@ -14,6 +14,15 @@ module Templates
     host.cmd(@options[:pswd])
     host.cmd('terminal datadump')
     res = host.cmd('show running-config')
+    host.close
+    res
+  end
+
+  # Alcatel OmniSwitch
+  def omniswitch
+    host = Net::Telnet.new(@connection)
+    host.login(@options[:user], @options[:pswd])
+    res = host.cmd('show configuration snapshot')
     host.close
     res
   end

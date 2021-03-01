@@ -122,6 +122,7 @@ module Templates
 
   # Juniper
   def juniper
+    @connection['Timeout'] = 20 # EX models can have long delay before CLI
     host = Net::Telnet.new(@connection)
     host.login(@options[:user], @options[:pswd])
     res = host.cmd('show config | display set | no-more')

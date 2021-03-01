@@ -199,13 +199,13 @@ end
 # Pool progress
 class Progress
   def initialize(options)
-    @bar = { i: 0.0, err: 0, done: 0 }
+    @bar = { i: 0, err: 0, done: 0 }
     @bar.merge!(options)
   end
 
   # Progress bar
   def bar(name)
-    print "\r\e[KPolling devices in #{@bar[:pool]} #{@bar[:done]}% (#{name})"
+    print "\r\e[KPolling devices in #{@bar[:pool]} (#{@bar[:done]}% #{@bar[:i]}/#{@bar[:length]} #{name})"
     return unless @bar[:done] == 100
 
     puts
@@ -216,7 +216,7 @@ class Progress
   def calc(err)
     @bar[:i] += 1
     @bar[:err] += err
-    @bar[:done] = (@bar[:i] / @bar[:length] * 100).to_i
+    @bar[:done] = (@bar[:i].to_f / @bar[:length] * 100).to_i
   end
 end
 

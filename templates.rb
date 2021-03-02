@@ -119,13 +119,31 @@ module Templates
     res
   end
 
-  # H3C no super password
+  # H3C/3Com no super password
   def h3c_nosuper
     @connection['Prompt'] = /[>\]:]\z/n
+    @connection['Telnetmode'] = false
     host = Net::Telnet.new(@connection)
     host.waitfor(/Password:\z/n)
     host.puts(@options[:pswd])
     host.waitfor(/login\z/n)
+    host.cmd('undo terminal monitor')
+    host.cmd('system-view')
+    host.cmd('user-interface vty 0 4')
+    host.cmd('screen-length 0')
+    res = host.cmd('display current-configuration')
+    host.cmd('undo screen-length')
+    host.close
+    res
+  end
+
+  # H3C/3Com username/password login
+  def h3c_user
+    @connection['Prompt'] = /[>\]]\z/n
+    @connection['Telnetmode'] = false
+    host = Net::Telnet.new(@connection)
+    host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /Username:\z/n)
+    host.cmd('undo terminal monitor')
     host.cmd('system-view')
     host.cmd('user-interface vty 0 4')
     host.cmd('screen-length 0')

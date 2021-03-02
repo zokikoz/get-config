@@ -193,6 +193,7 @@ module Templates
 
   # Riverstone
   def riverstone
+    @connection['Waittime'] = 1 # Sometimes RS sends promt with delay
     host = Net::Telnet.new(@connection)
     host.puts('')
     host.login('Name' => @options[:user], 'Password' => @options[:pswd], 'LoginPrompt' => /User: \z/n)

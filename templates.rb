@@ -52,6 +52,18 @@ module Templates
     res
   end
 
+  # Cisco no enable password required (privilege level 15)
+  def cisco_noenable
+    @connection['Prompt'] = /#\z/n
+    host = Net::Telnet.new(@connection)
+    host.waitfor(/Password: \z/n)
+    host.cmd(@options[:pswd])
+    host.cmd('terminal length 0')
+    res = host.cmd('show running-config')
+    host.close
+    res
+  end
+
   # Cisco EtherSwitch module
   def cisco_es
     @connection['Prompt'] = /[#>]\z/n
@@ -96,7 +108,7 @@ module Templates
     res
   end
 
-  # HP no super password needed (user privilege 3)
+  # HP no super password required (user privilege 3)
   def hp_nosuper
     @connection['Prompt'] = /[>:]\z/n
     host = Net::Telnet.new(@connection)

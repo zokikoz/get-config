@@ -94,7 +94,7 @@ module Prep
         case group[:type]
         when 'default'
           default.merge!(group) # Saving default login
-        when options[:type]
+        when options[:type], options[:pgrp]
           options.safe_merge!(group)
           throw :done
         when Array

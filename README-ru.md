@@ -82,13 +82,13 @@ CONFIG = {
 - omniswitch - Alcatel OmniSwitch
 - cisco_user - Cisco авторизация по имени пользователя
 - cisco_enable - Cisco с использованием enable (пароль установлен)
-- cisco_noenable - Cisco с использованием enable (пароль не требуется) (privilege level 15)
+- cisco_noenable - Cisco без использования enable (privilege level 15)
 - cisco_es - модуль Cisco EtherSwitch доступный через service-module session
 - cisco_asa - Cisco ASA
 - hp_super - HP с использованием super (пароль установлен)
-- hp_nosuper - HP с использованием super (пароль не требуется) (user privilege 3)
+- hp_nosuper - HP без использования super (user privilege 3)
 - hp_user - HP авторизация по имени пользователя
-- h3c_nosuper - H3C/3Com с использованием super (пароль не требуется)
+- h3c_nosuper - H3C/3Com без использования super
 - h3c_user - H3C/3Com вторизация по имени пользователя
 - juniper - Juniper
 - dlink_new - D-Link новый CLI похожий на Cisco (15xx)

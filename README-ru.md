@@ -43,6 +43,7 @@ CONFIG = {
   :host: 192.168.1.2
   :type: juniper
 ```
+Обязательные параметры: **:name: :host: :type:
 
 Файл **pswd.yml** содержит учетную информацию (логины/пароли) для доступа к устройствам:
 ``` yaml
@@ -70,22 +71,22 @@ CONFIG = {
 
 В [templates.rb](./templates.rb) определены шаблоны типов устройств для их опроса по telnet. Шаблоны оформлены в виде отдельных методов с использованием комманд класса [Net::Telnet](https://github.com/ruby/net-telnet). В случае необходимости возможно добавление новых шаблонов (методов). В текущей версии заданы следующие типы сетевых устройств:
 
-omnistack_enable - Alcatel OmniStack LS enable password login
-omnistack_user - Alcatel OmniStack LS username/password login
-omniswitch - Alcatel OmniSwitch
-cisco_user - Cisco username/password login
-cisco_enable - Cisco enable password login
-cisco_noenable - Cisco no enable password required (privilege level 15)
-cisco_es - Cisco EtherSwitch module
-cisco_asa - Cisco ASA
-hp_super - HP super password login
-hp_nosuper - HP no super password required (user privilege 3)
-hp_user - HP username/password login
-h3c_nosuper - H3C/3Com no super password
-h3c_user - H3C/3Com username/password login
-juniper - Juniper
-dlink_new - D-Link new cisco-like style CLI (15xx)
-dlink_old - D-Link old own style CLI (12xx/32xx/35xx)
-eltex - Eltex
-extreme - Extreme
-riverstone - Riverstone
+- omnistack_enable - Alcatel OmniStack LS enable password login
+- omnistack_user - Alcatel OmniStack LS username/password login
+- omniswitch - Alcatel OmniSwitch
+- cisco_user - Cisco username/password login
+- cisco_enable - Cisco enable password login
+- cisco_noenable - Cisco no enable password required (privilege level 15)
+- cisco_es - Cisco EtherSwitch module
+- cisco_asa - Cisco ASA
+- hp_super - HP super password login
+- hp_nosuper - HP no super password required (user privilege 3)
+- hp_user - HP username/password login
+- h3c_nosuper - H3C/3Com no super password
+- h3c_user - H3C/3Com username/password login
+- juniper - Juniper
+- dlink_new - D-Link new cisco-like style CLI (15xx)
+- dlink_old - D-Link old own style CLI (12xx/32xx/35xx)
+- eltex - Eltex
+- extreme - Extreme
+- riverstone - Riverstone

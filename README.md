@@ -61,9 +61,9 @@ The **pswd.yml** file contains credentials (logins/passwords) for accessing devi
   - cisco_enable
 ```
 
-The username and password specified in **pool.yml** have the highest priority. If they are not specified in **pool.yml**, and there is authorization for a certain type of devices in the **pswd.yml** file, then the login/password from **pswd.yml** is set for these devices.
+The username and password specified in **pool.yml** have the highest priority. If they are not specified in **pool.yml**, and there is authorization for a certain type of devices in the **pswd.yml** file, then the login/password from **pswd.yml** is used for these devices.
 
-If the device type is not found in **pswd.yml**, the default authorization (```:type: default```) is set.
+If the device type is not found in **pswd.yml**, the default authorization (```:type: default```) is used.
 
 Also, it is possible to define a password group ```:pgrp:``` in **pool.yml**, which will correspond to ```:type:``` in **pswd.yml**. It should be noted that if authorization is set for a device type, then the password group in **pswd.yml** must be higher than the authorization by device type in order to have priority.
 
@@ -94,4 +94,4 @@ Devices are polled in the order specified in **pool.yml**. Configuration files a
 - dlink_old - D-Link old own style CLI (12xx/32xx/35xx)
 - eltex - Eltex
 - extreme - Extreme
-- riverstone - Riverstone- 
+- riverstone - Riverstone

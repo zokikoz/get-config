@@ -28,7 +28,7 @@ CONFIG = {
 ```
 On first launch, two files are created in [YAML](https://en.wikipedia.org/wiki/YAML) format : **pool.yml** and **pswd.yml**.
 
-**pool.yml** file must specify all devices that will be polled in the following form:
+**pool.yml** file contains all devices that will be polled in the following form:
 ``` yaml
 ---
 - :name: device1     # Device name, used as filename that stores the configuration in archive directory (REQUIRED)

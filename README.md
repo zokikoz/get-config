@@ -7,6 +7,7 @@ Script is designed to poll various managed network devices (switches, routers, f
 
 ## Installation
 You need to install [Ruby](https://www.ruby-lang.org/en/documentation/installation/)
+
 and [Net::Telnet](https://github.com/ruby/net-telnet) class via gem library:
 ```
 $ gem install net-telnet

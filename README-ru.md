@@ -8,7 +8,7 @@
 
 ## Установка
 Для работы потребуется установить [Ruby](https://www.ruby-lang.org/ru/documentation/installation/).
-Также, необходимо установить класс Net::Telnet через библиотеку gem:
+Также, необходимо установить класс [Net::Telnet](https://github.com/ruby/net-telnet) через библиотеку gem:
 ```
 $ gem install net-telnet
 ```
@@ -77,22 +77,22 @@ CONFIG = {
 
 В [templates.rb](./templates.rb) определены шаблоны типов устройств для их опроса по telnet. Шаблоны оформлены в виде отдельных методов с использованием комманд класса [Net::Telnet](https://github.com/ruby/net-telnet). В случае необходимости возможно добавление новых шаблонов (методов). В текущей версии заданы следующие типы сетевых устройств:
 
-- omnistack_enable - Alcatel OmniStack LS enable password login
-- omnistack_user - Alcatel OmniStack LS username/password login
+- omnistack_enable - Alcatel OmniStack LS с использованием enable (пароль установлен)
+- omnistack_user - Alcatel OmniStack LS авторизация по имени пользователя
 - omniswitch - Alcatel OmniSwitch
-- cisco_user - Cisco username/password login
-- cisco_enable - Cisco enable password login
-- cisco_noenable - Cisco no enable password required (privilege level 15)
-- cisco_es - Cisco EtherSwitch module
+- cisco_user - Cisco авторизация по имени пользователя
+- cisco_enable - Cisco с использованием enable (пароль установлен)
+- cisco_noenable - Cisco с использованием enable (пароль не требуется) (privilege level 15)
+- cisco_es - модуль Cisco EtherSwitch доступный через service-module session
 - cisco_asa - Cisco ASA
-- hp_super - HP super password login
-- hp_nosuper - HP no super password required (user privilege 3)
-- hp_user - HP username/password login
-- h3c_nosuper - H3C/3Com no super password
-- h3c_user - H3C/3Com username/password login
+- hp_super - HP с использованием super (пароль установлен)
+- hp_nosuper - HP с использованием super (пароль не требуется) (user privilege 3)
+- hp_user - HP авторизация по имени пользователя
+- h3c_nosuper - H3C/3Com с использованием super (пароль не требуется)
+- h3c_user - H3C/3Com вторизация по имени пользователя
 - juniper - Juniper
-- dlink_new - D-Link new cisco-like style CLI (15xx)
-- dlink_old - D-Link old own style CLI (12xx/32xx/35xx)
+- dlink_new - D-Link новый CLI похожий на Cisco (15xx)
+- dlink_old - D-Link старый собственный CLI (12xx/32xx/35xx)
 - eltex - Eltex
 - extreme - Extreme
 - riverstone - Riverstone

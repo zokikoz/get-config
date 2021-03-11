@@ -9,7 +9,9 @@
 ## Установка
 Для работы потребуется установить [Ruby](https://www.ruby-lang.org/ru/documentation/installation/).
 Также, необходимо установить класс Net::Telnet через библиотеку gem:
-```$ gem install net-telnet```
+```
+$ gem install net-telnet
+```
 
 ## Использование
 Скрипт состоит из двух файлов: исполняемый **[get-conf.rb](./get-conf.rb)** и поключаемый **[templates.rb](./templates.rb)**.

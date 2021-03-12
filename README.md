@@ -14,21 +14,24 @@ $ gem install net-telnet
 ```
 
 ## Usage
-### Configuration
 The script consists of two files: executable **[get-conf.rb](./get-conf.rb)** and included **[templates.rb](./templates.rb)**.
 The **[templates.rb](./templates.rb)** file contains templates for polling devices.
-At the beginning of the **[get-conf.rb](./get-conf.rb)** file is the main configuration block. By default, no changes are required.
-```ruby
-CONFIG = {
-  archv_dir: 'archive',    # Path to the directory where the configuration archive is stored
-  pool_file: %w[pool.yml], # Device pool filename, when using multiple files, separate them with a space
-  pswd_file: 'pswd.yml',   # Filename that contains credentials for accessing devices.
-  error_log: 'errors.log'  # Log file path
-}.freeze
-```
-On first launch, two files are created in [YAML](https://en.wikipedia.org/wiki/YAML) format : **pool.yml** and **pswd.yml**.
 
-**pool.yml** file contains all devices that will be polled in the following form:
+### Configuration
+On first launch, three files are created in [YAML](https://en.wikipedia.org/wiki/YAML) format : **config.yml**, **pool.yml** and **pswd.yml**.
+
+The **config.yml** file contains the main configuration block. By default, no changes are required.
+```yaml
+---
+:archv_dir: archive    # Path to the directory where the configuration archive is stored
+:pool_file:
+- pool.yml             # Device pool filename
+- pool2.yml            # Multiple pools, if necesary
+:pswd_file: pswd.yml   # НFilename that contains credentials for accessing devices
+:error_log: errors.log # Log file path
+```
+
+The **pool.yml** file contains all devices that will be polled in the following form:
 ``` yaml
 ---
 - :name: device1     # Device name, used as filename that stores the configuration in archive directory (REQUIRED)

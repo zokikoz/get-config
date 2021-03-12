@@ -27,7 +27,7 @@ The **config.yml** file contains the main configuration block. By default, no ch
 :pool_file:
 - pool.yml             # Device pool filename
 - pool2.yml            # Multiple pools, if necesary
-:pswd_file: pswd.yml   # НFilename that contains credentials for accessing devices
+:pswd_file: pswd.yml   # Filename that contains credentials for accessing devices
 :error_log: errors.log # Log file path
 ```
 

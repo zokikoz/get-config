@@ -78,7 +78,7 @@ When the script starts, a directory with the name in the form of the current dat
 
 Devices are polled in the order specified in **pool.yml**. Configuration files are saved in the archive directory. Errors occurred during device polling are saved in the log file (by default **./errors.log**)
 
-[templates.rb](./templates.rb) defines device type templates for polling them via telnet. Templates are in form of methods using the [Net::Telnet](https://github.com/ruby/net-telnet) class commands. If necessary, it is possible to add new templates (methods). In the current version, the following types of network devices are specified:
+In [templates.rb](./templates.rb) file defined device type templates for polling them via telnet. Templates are in form of methods using the [Net::Telnet](https://github.com/ruby/net-telnet) class commands. If necessary, it is possible to add new templates (methods). In the current version, the following types of network devices are specified:
 
 - omnistack_enable - Alcatel OmniStack LS enable password login
 - omnistack_user - Alcatel OmniStack LS username/password login

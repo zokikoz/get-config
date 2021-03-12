@@ -2,19 +2,21 @@
 # get-conf.rb
 # Gets configurations of network devices via telnet session
 
-# Settings
-CONFIG = {
-  archv_dir: 'archive', # Archive directory path
-  pool_file: %w[pool.yml], # Device pool filename
-  pswd_file: 'pswd.yml', # Passwords filename
-  error_log: 'errors.log' # Errors logfile
-}.freeze
-
 require 'net-telnet'
 require 'fileutils'
 require 'yaml'
 
 require_relative 'templates'
+
+# Settings
+SETUP = {
+  archv_dir: 'archive', # Archive directory path
+  pool_file: %w[pool.yml], # Device pool filename
+  pswd_file: 'pswd.yml', # Passwords filename
+  error_log: 'errors.log' # Errors logfile
+}.freeze
+File.open('config.yml', 'w') { |f| f.write(SETUP.to_yaml) } unless File.exist?('config.yml')
+CONFIG = YAML.safe_load(File.read('config.yml'), [Symbol])
 
 # Preparations
 module Prep

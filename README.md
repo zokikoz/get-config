@@ -3,7 +3,7 @@ English | [Русский](./README-ru.md)
 # get-config
 Gets configurations of network devices via telnet session
 
-Script is designed to poll various managed network devices (switches, routers, firewalls, etc.) in order to automatically collect their configuration. Connection to devices is carried out using a telnet connection, which is implemented through the [Net::Telnet](https://github.com/ruby/net-telnet) class.
+Script is designed to poll various managed network devices (switches, routers, firewalls, etc.) in order to automatically collect their configuration. Connection to devices is carried out using a telnet session, which is implemented through the [Net::Telnet](https://github.com/ruby/net-telnet) class.
 
 ## Installation
 You need to install [Ruby](https://www.ruby-lang.org/en/documentation/installation/)

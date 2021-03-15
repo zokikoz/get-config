@@ -15,8 +15,11 @@ SETUP = {
   pswd_file: 'pswd.yml', # Passwords filename
   error_log: 'errors.log' # Errors logfile
 }.freeze
+
 File.open('config.yml', 'w') { |f| f.write(SETUP.to_yaml) } unless File.exist?('config.yml')
 CONFIG = YAML.safe_load(File.read('config.yml'), [Symbol])
+
+SILENT = %w[-s --silent].include?(ARGV[0]) ? true : false
 
 # Preparations
 module Prep
@@ -85,7 +88,7 @@ module Prep
     end
     work_dir = "#{@base_dir}/#{pool_name}" unless CONFIG[:pool_file].length == 1 # Subdir if multiple pools
     FileUtils.mkdir_p(work_dir)
-    puts "Saving in \"#{work_dir}\""
+    puts "Saving in \"#{work_dir}\"" unless SILENT
     work_dir
   end
 
@@ -208,6 +211,8 @@ class Progress
 
   # Progress bar
   def bar(name)
+    return if SILENT
+
     print "\r\e[KPolling devices in #{@bar[:pool]}: #{@bar[:done]}% (#{@bar[:i]}/#{@bar[:length]}), #{name}"
     return unless @bar[:done] == 100
 

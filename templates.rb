@@ -85,6 +85,7 @@ module Templates
     host.cmd('enable')
     host.cmd('terminal length 0')
     res = host.cmd('show running-config')
+    host.puts('exit')
     host.close
     res
   end

@@ -33,88 +33,91 @@ module Prep
   PASSWORDS = [{ user: 'default-user', pswd: 'default-password', type: 'default' },
                { user: 'cisco', pswd: 'cisco', type: %w[cisco_user cisco_enable] }].freeze
 
-  # Creating a sample pool file
-  def self.pool_file
-    return if File.exist?(CONFIG[:pool_file][0])
+  class << self
+    # Creating a sample pool file
+    def pool_file
+      return if File.exist?(CONFIG[:pool_file][0])
 
-    puts "Creating example devices pool file (#{CONFIG[:pool_file][0]})"
-    File.open(CONFIG[:pool_file][0], 'w') { |f| f.write(POOL.to_yaml) }
-  end
-
-  # Creating a sample passwords file
-  def self.pswd_file
-    return if File.exist?(CONFIG[:pswd_file])
-
-    puts "Creating example passwords file (#{CONFIG[:pswd_file]})"
-    File.open(CONFIG[:pswd_file], 'w') { |f| f.write(PASSWORDS.to_yaml) }
-  end
-
-  # Pool structure check
-  def self.pool_struct_check(pool)
-    pool.each do |pool_unit|
-      raise CheckError, 'Wrong pool file structure' unless pool_unit.is_a?(Hash)
-      raise CheckError, 'Wrong pool file structure' unless pool_unit.keys?(POOL[1])
+      puts "Creating example devices pool file (#{CONFIG[:pool_file][0]})"
+      File.open(CONFIG[:pool_file][0], 'w') { |f| f.write(POOL.to_yaml) }
     end
-  end
 
-  # Passwords structure check
-  def self.pswd_struct_check(pswd)
-    pswd.each do |pswd_unit|
-      raise CheckError, 'Wrong passwords file structure' unless pswd_unit.is_a?(Hash)
-      raise CheckError, 'Wrong passwords file structure' unless pswd_unit.keys?(PASSWORDS[1])
+    # Creating a sample passwords file
+    def pswd_file
+      return if File.exist?(CONFIG[:pswd_file])
+
+      puts "Creating example passwords file (#{CONFIG[:pswd_file]})"
+      File.open(CONFIG[:pswd_file], 'w') { |f| f.write(PASSWORDS.to_yaml) }
     end
-  end
 
-  # Pools and passwords files check
-  def self.check(pool, passwords)
-    raise CheckError, 'Empty config file' if pool.nil? || passwords.nil?
-    raise CheckError, 'Modify config files to get started' if pool == POOL || passwords == PASSWORDS
-
-    pool_struct_check(pool)
-    pswd_struct_check(passwords)
-  rescue CheckError => e
-    log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{e}\n"
-    File.open(CONFIG[:error_log], 'a') { |f| f.write log }
-    puts e
-    exit 0
-  end
-
-  # Creating a working directory
-  def self.work_dir(pool_name)
-    if @base_dir.nil?
-      @base_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
-      @base_dir = "#{@base_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(@base_dir) # Adding timestamp if dir exists
-      work_dir = @base_dir
+    # Pool structure check
+    def pool_struct_check(pool)
+      pool.each do |pool_unit|
+        raise CheckError, 'Wrong pool file structure' unless pool_unit.is_a?(Hash)
+        raise CheckError, 'Wrong pool file structure' unless pool_unit.keys?(POOL[1])
+      end
     end
-    work_dir = "#{@base_dir}/#{pool_name}" unless CONFIG[:pool_file].length == 1 # Subdir if multiple pools
-    FileUtils.mkdir_p(work_dir)
-    puts "Saving in \"#{work_dir}\"" unless SILENT
-    work_dir
-  end
 
-  # Setting group or default login from pswd.yml file if credentials is not set in pool.yml
-  def self.login(options, passwords, **default)
-    catch(:done) do
-      passwords.each do |group|
-        case group[:type]
-        when 'default'
-          default.merge!(group) # Saving the default login
-        when options[:type], options[:pgrp]
-          options.safe_merge!(group)
-          throw :done
-        when Array
-          group[:type].each do |type|
-            if type == options[:type]
-              options.safe_merge!(group)
-              throw :done
+    # Passwords structure check
+    def pswd_struct_check(pswd)
+      pswd.each do |pswd_unit|
+        raise CheckError, 'Wrong passwords file structure' unless pswd_unit.is_a?(Hash)
+        raise CheckError, 'Wrong passwords file structure' unless pswd_unit.keys?(PASSWORDS[1])
+      end
+    end
+
+    # Pools and passwords files check
+    def check(pool, passwords)
+      raise CheckError, 'Empty config file' if pool.nil? || passwords.nil?
+      raise CheckError, 'Modify config files to get started' if pool == POOL || passwords == PASSWORDS
+
+      pool_struct_check(pool)
+      pswd_struct_check(passwords)
+    rescue CheckError => e
+      log = "#{Time.now.strftime('%d.%m.%Y %H:%M')} #{e}\n"
+      File.open(CONFIG[:error_log], 'a') { |f| f.write log }
+      puts e
+      exit 0
+    end
+
+    # Creating a working directory
+    def work_dir(pool_name)
+      if @base_dir.nil?
+        @base_dir = "#{CONFIG[:archv_dir]}/#{Time.now.strftime('%Y-%m-%d')}" # Naming by date
+        @base_dir = "#{@base_dir}-#{Time.now.to_i.to_s[-6..-1]}" if Dir.exist?(@base_dir) # Add timestamp if dir exists
+        work_dir = @base_dir
+      end
+      work_dir = "#{@base_dir}/#{pool_name}" unless CONFIG[:pool_file].length == 1 # Subdir if multiple pools
+      FileUtils.mkdir_p(work_dir)
+      puts "Saving in \"#{work_dir}\"" unless SILENT
+      work_dir
+    end
+
+    # Setting group or default login from pswd.yml file if credentials is not set in pool.yml
+    def login(options, passwords, **default)
+      catch(:done) do
+        passwords.each do |group|
+          case group[:type]
+          when 'default'
+            default.merge!(group) # Saving the default login
+          when options[:type], options[:pgrp]
+            options.safe_merge!(group)
+            throw :done
+          when Array
+            group[:type].each do |type|
+              if type == options[:type]
+                options.safe_merge!(group)
+                throw :done
+              end
             end
           end
         end
+        options.safe_merge!(default) # Setting the default login if not find any suitable type in pswd.yml
       end
-      options.safe_merge!(default) # Setting the default login if not find any suitable type in pswd.yml
     end
+    # set_login method end
   end
-  # set_login method end
+  # << self methods end
 end
 # Prep module end
 
